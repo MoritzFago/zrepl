@@ -82,11 +82,11 @@ func ZFSListFilesystemVersions(fs *DatasetPath, filter FilesystemVersionFilter) 
 
 	res = make([]FilesystemVersion, 0)
 	for listResult := range listResults {
-		if listResult.err != nil {
-			return nil, listResult.err
+		if listResult.Err != nil {
+			return nil, listResult.Err
 		}
 
-		line := listResult.fields
+		line := listResult.Fields
 
 		if len(line[0]) < 3 {
 			err = errors.New(fmt.Sprintf("snapshot or bookmark name implausibly short: %s", line[0]))

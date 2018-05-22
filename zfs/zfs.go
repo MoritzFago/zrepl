@@ -189,13 +189,13 @@ func ZFSList(properties []string, zfsArgs ...string) (res [][]string, err error)
 }
 
 type ZFSListResult struct {
-	fields []string
-	err    error
+	Fields []string
+	Err    error
 }
 
 // ZFSListChan executes `zfs list` and sends the results to the `out` channel.
 // The `out` channel is always closed by ZFSListChan:
-// If an error occurs, it is closed after sending a result with the err field set.
+// If an error occurs, it is closed after sending a result with the Err field set.
 // If no error occurs, it is just closed.
 // If the operation is cancelled via context, the channel is just closed.
 //
@@ -304,6 +304,27 @@ func ZFSRecv(fs *DatasetPath, stream io.Reader, additionalArgs ...string) (err e
 	return nil
 }
 
+func ZFSRecvWriter(fs *DatasetPath, additionalArgs ...string) (io.WriteCloser, error) {
+
+	args := make([]string, 0)
+	args = append(args, "recv")
+	if len(args) > 0 {
+		args = append(args, additionalArgs...)
+	}
+	args = append(args, fs.ToString())
+
+	cmd, err := util.NewIOCommand(ZFS_BINARY, args, 1024)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cmd.Start(); err != nil {
+		return nil, err
+	}
+
+	return cmd.Stdin, nil
+}
+
 type ZFSProperties struct {
 	m map[string]string
 }
@@ -353,6 +374,32 @@ func ZFSSet(fs *DatasetPath, props *ZFSProperties) (err error) {
 	}
 
 	return
+}
+
+func ZFSGet(fs *DatasetPath, props []string) (*ZFSProperties, error) {
+	args := []string{"get", "-Hp", "-o", "property,value", strings.Join(props, ","), fs.ToString()}
+
+	cmd := exec.Command(ZFS_BINARY, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+	o := string(output)
+	lines := strings.Split(o, "\n")
+	if len(lines) != len(props) {
+		return nil, fmt.Errorf("zfs get did not return the number of expected property values")
+	}
+	res := &ZFSProperties{
+		make(map[string]string, len(lines)),
+	}
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			return nil, fmt.Errorf("zfs get did not return property value pairs")
+		}
+		res.m[fields[0]] = fields[1]
+	}
+	return res, nil
 }
 
 func ZFSDestroy(dataset string) (err error) {

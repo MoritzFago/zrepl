@@ -23,13 +23,13 @@ func ZFSListMapping(filter DatasetFilter) (datasets []*DatasetPath, err error) {
 	datasets = make([]*DatasetPath, 0)
 	for r := range rchan {
 
-		if r.err != nil {
-			err = r.err
+		if r.Err != nil {
+			err = r.Err
 			return
 		}
 
 		var path *DatasetPath
-		if path, err = NewDatasetPath(r.fields[0]); err != nil {
+		if path, err = NewDatasetPath(r.Fields[0]); err != nil {
 			return
 		}
 

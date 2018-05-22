@@ -21,6 +21,10 @@ type Filesystem struct {
 
 type FilteredError struct{ fs string }
 
+func NewFilteredError(fs string) FilteredError {
+	return FilteredError{fs}
+}
+
 func (f FilteredError) Error() string { return "endpoint does not allow access to filesystem " + f.fs }
 
 type SendRequest struct {
@@ -45,8 +49,9 @@ type SendResponse struct {
 type ReceiveRequest struct {
 	Filesystem string
 	// The resume token used by the sending side.
-	// The receiver MUST discard the saved state on their side if ResumeToken
-	// does not match the zfs property of Filesystem on their side.
+	// The receiver MAY discard the saved state on their side if ResumeToken
+	// does not match the zfs property of Filesystem on their side
+	// OR it MAY return an error and deny the request.
 	ResumeToken string
 }
 
